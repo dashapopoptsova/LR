@@ -11,9 +11,9 @@ const jwtSecret = "secret"
 
 type repositoryInterface interface {
 	createUser(username, password string) error
-	getUserPassword(username string) (string, error)
-	saveMessage(text string) error
-	getMessages() ([]string, error)
+	getUser(username string) (int, string, error)
+	createPost(userID int, content string) error
+	getPosts(userID int) ([]string, error)
 }
 
 type service struct {
@@ -33,7 +33,7 @@ func (s *service) register(username, password string) error {
 }
 
 func (s *service) login(username, password string) (string, error) {
-	stored, err := s.repo.getUserPassword(username)
+	id, stored, err := s.repo.getUser(username)
 	if err != nil {
 		return "", errors.New("user not found")
 	}
@@ -43,17 +43,17 @@ func (s *service) login(username, password string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": username,
-		"exp":      time.Now().Add(24 * time.Hour).Unix(),
+		"user_id": id,
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	})
 
 	return token.SignedString([]byte(jwtSecret))
 }
 
-func (s *service) saveMessage(text string) error {
-	return s.repo.saveMessage(text)
+func (s *service) createPost(userID int, content string) error {
+	return s.repo.createPost(userID, content)
 }
 
-func (s *service) getMessages() ([]string, error) {
-	return s.repo.getMessages()
+func (s *service) getPosts(userID int) ([]string, error) {
+	return s.repo.getPosts(userID)
 }

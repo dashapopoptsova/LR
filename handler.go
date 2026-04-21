@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"strings"
 )
@@ -11,8 +10,8 @@ type serviceInterface interface {
 	ping() string
 	register(username, password string) error
 	login(username, password string) (string, error)
-	saveMessage(text string) error
-	getMessages() ([]string, error)
+	createPost(userID int, content string) error
+	getPosts(userID int) ([]string, error)
 }
 
 type handler struct {
@@ -28,8 +27,7 @@ func (h *handler) routes() *http.ServeMux {
 	mux.HandleFunc("/test", h.test)
 	mux.HandleFunc("/register", h.register)
 	mux.HandleFunc("/login", h.login)
-	mux.HandleFunc("/dbtest", h.dbtest)
-	mux.HandleFunc("/messages", h.messages)
+	mux.HandleFunc("/posts", authMiddleware(h.posts))
 	return mux
 }
 
@@ -76,27 +74,30 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(token))
 }
 
-func (h *handler) dbtest(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(int)
+
+	switch r.Method {
+	case http.MethodPost:
+		var body struct {
+			Content string `json:"content"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "invalid json", http.StatusBadRequest)
+			return
+		}
+		if err := h.svc.createPost(userID, body.Content); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write([]byte("post created"))
+
+	case http.MethodGet:
+		posts, err := h.svc.getPosts(userID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write([]byte(strings.Join(posts, "\n")))
 	}
-
-	if err := h.svc.saveMessage(string(body)); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Write([]byte("saved"))
-}
-
-func (h *handler) messages(w http.ResponseWriter, r *http.Request) {
-	msgs, err := h.svc.getMessages()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Write([]byte(strings.Join(msgs, "\n")))
 }

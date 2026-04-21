@@ -26,9 +26,10 @@ func newRepository(dsn string) (*repository, error) {
 			username TEXT UNIQUE NOT NULL,
 			password TEXT NOT NULL
 		);
-		CREATE TABLE IF NOT EXISTS messages (
+		CREATE TABLE IF NOT EXISTS posts (
 			id SERIAL PRIMARY KEY,
-			text TEXT
+			user_id INT NOT NULL REFERENCES users(id),
+			content TEXT NOT NULL
 		);
 	`)
 	if err != nil {
@@ -43,31 +44,30 @@ func (r *repository) createUser(username, password string) error {
 	return err
 }
 
-func (r *repository) getUserPassword(username string) (string, error) {
-	var password string
-	err := r.db.QueryRow(`SELECT password FROM users WHERE username = $1`, username).Scan(&password)
-	return password, err
+func (r *repository) getUser(username string) (id int, password string, err error) {
+	err = r.db.QueryRow(`SELECT id, password FROM users WHERE username = $1`, username).Scan(&id, &password)
+	return
 }
 
-func (r *repository) saveMessage(text string) error {
-	_, err := r.db.Exec(`INSERT INTO messages (text) VALUES ($1)`, text)
+func (r *repository) createPost(userID int, content string) error {
+	_, err := r.db.Exec(`INSERT INTO posts (user_id, content) VALUES ($1, $2)`, userID, content)
 	return err
 }
 
-func (r *repository) getMessages() ([]string, error) {
-	rows, err := r.db.Query(`SELECT text FROM messages`)
+func (r *repository) getPosts(userID int) ([]string, error) {
+	rows, err := r.db.Query(`SELECT content FROM posts WHERE user_id = $1`, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var messages []string
+	var posts []string
 	for rows.Next() {
-		var text string
-		if err := rows.Scan(&text); err != nil {
+		var content string
+		if err := rows.Scan(&content); err != nil {
 			return nil, err
 		}
-		messages = append(messages, text)
+		posts = append(posts, content)
 	}
-	return messages, nil
+	return posts, nil
 }
