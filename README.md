@@ -14,11 +14,10 @@ HTTP сервер на Go — сервис публикации постов.
 
 ```
 handler.go      — HTTP слой, приём запросов
+middleware.go   — проверка JWT токена
 service.go      — бизнес-логика
 repository.go   — работа с БД
 ```
-
-Все файлы в одном пакете `main`, без вложенных папок.
 
 ## Структура проекта
 
@@ -26,6 +25,7 @@ repository.go   — работа с БД
 posts-service/
 ├── main.go
 ├── handler.go
+├── middleware.go
 ├── service.go
 ├── repository.go
 └── go.mod
@@ -44,13 +44,13 @@ go run .
 
 ## Эндпоинты
 
-| Метод | URL | Описание |
-|-------|-----|----------|
-| GET | `/test` | Проверка работы сервера |
-| POST | `/register` | Регистрация пользователя |
-| POST | `/login` | Авторизация, получение JWT токена |
-| POST | `/dbtest` | Запись строки в БД |
-| GET | `/messages` | Чтение всех записей из БД |
+| Метод | URL | Защита | Описание |
+|-------|-----|--------|----------|
+| GET | `/test` | — | Проверка работы сервера |
+| POST | `/register` | — | Регистрация пользователя |
+| POST | `/login` | — | Авторизация, получение JWT токена |
+| POST | `/posts` | JWT | Создание поста |
+| GET | `/posts` | JWT | Просмотр своих постов |
 
 ## Примеры запросов
 
@@ -70,6 +70,20 @@ POST /login
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
+**Создание поста** (требует токен)
+```
+POST /posts
+Authorization: Bearer <токен>
+
+{"content": "мой первый пост"}
+```
+
+**Просмотр своих постов** (требует токен)
+```
+GET /posts
+Authorization: Bearer <токен>
+```
+
 ## База данных
 
 Таблицы создаются автоматически при старте сервера:
@@ -81,9 +95,10 @@ CREATE TABLE IF NOT EXISTS users (
     password TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS messages (
+CREATE TABLE IF NOT EXISTS posts (
     id SERIAL PRIMARY KEY,
-    text TEXT
+    user_id INT NOT NULL REFERENCES users(id),
+    content TEXT NOT NULL
 );
 ```
 
@@ -91,4 +106,6 @@ CREATE TABLE IF NOT EXISTS messages (
 
 **ЛР1** — HTTP сервер с чистой архитектурой и graceful shutdown  
 **ЛР2** — Подключение к PostgreSQL, инициализация таблиц, операции чтения и записи  
-**ЛР3** — Регистрация пользователей и авторизация с выдачей JWT токена
+**ЛР3** — Регистрация пользователей и авторизация с выдачей JWT токена  
+**ЛР4** — Хэндлеры создания и просмотра постов  
+**ЛР5** — Middleware для проверки JWT и передачи user_id в хэндлеры
