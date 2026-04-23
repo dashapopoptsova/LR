@@ -7,6 +7,7 @@ HTTP сервер на Go — сервис публикации постов.
 - **Go 1.21**
 - **PostgreSQL** — хранение данных
 - **JWT** — сессионные токены авторизации
+- **Docker Compose + Nginx** — контейнерный запуск API, БД и Web UI
 
 ## Архитектура
 
@@ -28,12 +29,41 @@ posts-service/
 ├── middleware.go
 ├── service.go
 ├── repository.go
-└── go.mod
+├── go.mod
+├── docker-compose.yml
+├── deploy/
+│   └── nginx/
+│       └── default.conf
+└── web/
+    ├── index.html
+    ├── styles.css
+    └── app.js
 ```
 
-## Запуск
+## Запуск через Docker Compose (рекомендуется)
 
 ```bash
+docker compose up --build
+```
+
+После запуска:
+
+- **Web UI:** `http://localhost:8080`
+- **Go API:** `http://localhost:8081`
+- **PostgreSQL:** `localhost:5432`
+
+Остановка:
+
+```bash
+docker compose down
+```
+
+## Локальный запуск без Docker
+
+1. Убедитесь, что PostgreSQL запущен локально и доступен по DSN.
+2. Запустите сервер:
+
+```powershell
 go mod tidy
 
 $env:ADDR=":8081"
@@ -41,6 +71,19 @@ $env:DSN="host=localhost port=5432 user=postgres password=ПАРОЛЬ dbname=po
 
 go run .
 ```
+
+3. Откройте `web/index.html` в браузере.
+   - Если открываете как `file://`, интерфейс отправляет запросы в `http://localhost:8081`.
+   - Если запуск через Docker Compose, интерфейс доступен на `http://localhost:8080` и работает через nginx-прокси.
+
+## Проверка через Web UI
+
+Интерфейс позволяет протестировать все endpoint:
+
+1. **Регистрация** → `POST /register`
+2. **Логин** → `POST /login` (JWT сохраняется автоматически)
+3. **Создать пост** → `POST /posts` (с `Authorization: Bearer <token>`)
+4. **Показать мои посты** → `GET /posts` (возвращает посты текущего пользователя)
 
 ## Эндпоинты
 

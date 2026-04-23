@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Posts Service Test UI</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="container">
+    <section class="panel">
+      <h2>Регистрация и логин</h2>
+      <div class="row">
+        <div>
+          <label for="username">Username</label>
+          <input id="username" placeholder="например, dasha" />
+        </div>
+        <div>
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="например, 1234" />
+        </div>
+      </div>
+      <div class="actions">
+        <button id="registerBtn">Регистрация</button>
+        <button id="loginBtn">Логин</button>
+      </div>
+      <div id="authStatus" class="status" style="display:none;"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Создание поста</h2>
+      <div class="row one">
+        <div>
+          <label for="postContent">Текст поста</label>
+          <textarea id="postContent" placeholder="Введите текст поста"></textarea>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="createPostBtn">Создать пост</button>
+      </div>
+      <div id="postStatus" class="status" style="display:none;"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Мои посты</h2>
+      <div class="actions" style="margin-bottom:10px;">
+        <button id="loadPostsBtn">Показать мои посты</button>
+      </div>
+      <pre id="postsOutput">Здесь появится ответ сервера.</pre>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
