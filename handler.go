@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -12,6 +13,7 @@ type serviceInterface interface {
 	login(username, password string) (string, error)
 	createPost(userID int, content string) error
 	getPosts(userID int) ([]string, error)
+	saveDBTest(value string) error
 }
 
 type handler struct {
@@ -25,6 +27,7 @@ func newHandler(svc serviceInterface) *handler {
 func (h *handler) routes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/test", h.test)
+	mux.HandleFunc("/dbtest", h.dbtest)
 	mux.HandleFunc("/register", h.register)
 	mux.HandleFunc("/login", h.login)
 	mux.HandleFunc("/posts", authMiddleware(h.posts))
@@ -33,6 +36,26 @@ func (h *handler) routes() *http.ServeMux {
 
 func (h *handler) test(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(h.svc.ping()))
+}
+
+func (h *handler) dbtest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "failed to read body", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.svc.saveDBTest(string(body)); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte("saved"))
 }
 
 func (h *handler) register(w http.ResponseWriter, r *http.Request) {

@@ -14,6 +14,7 @@ type repositoryInterface interface {
 	getUser(username string) (int, string, error)
 	createPost(userID int, content string) error
 	getPosts(userID int) ([]string, error)
+	saveDBTest(value string) error
 }
 
 type service struct {
@@ -56,4 +57,8 @@ func (s *service) createPost(userID int, content string) error {
 
 func (s *service) getPosts(userID int) ([]string, error) {
 	return s.repo.getPosts(userID)
+}
+
+func (s *service) saveDBTest(value string) error {
+	return s.repo.saveDBTest(value)
 }

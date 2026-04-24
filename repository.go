@@ -21,17 +21,21 @@ func newRepository(dsn string) (*repository, error) {
 	}
 
 	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS users (
-			id SERIAL PRIMARY KEY,
-			username TEXT UNIQUE NOT NULL,
-			password TEXT NOT NULL
-		);
-		CREATE TABLE IF NOT EXISTS posts (
-			id SERIAL PRIMARY KEY,
-			user_id INT NOT NULL REFERENCES users(id),
-			content TEXT NOT NULL
-		);
-	`)
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      username TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS posts (
+      id SERIAL PRIMARY KEY,
+      user_id INT NOT NULL REFERENCES users(id),
+      content TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS dbtest_logs (
+      id SERIAL PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `)
 	if err != nil {
 		return nil, err
 	}
@@ -70,4 +74,9 @@ func (r *repository) getPosts(userID int) ([]string, error) {
 		posts = append(posts, content)
 	}
 	return posts, nil
+}
+
+func (r *repository) saveDBTest(value string) error {
+	_, err := r.db.Exec(`INSERT INTO dbtest_logs (value) VALUES ($1)`, value)
+	return err
 }
